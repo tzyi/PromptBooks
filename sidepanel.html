@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PromptBooks</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- ===== 主畫面 ===== -->
+  <div id="app-main">
+    <!-- 頂部導覽列 -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <h1 class="app-title">PromptBooks</h1>
+        <nav class="tab-nav">
+          <a href="#" class="tab-link active" data-tab="all">所有提示詞</a>
+          <a href="#" class="tab-link" data-tab="favorites">收藏</a>
+        </nav>
+      </div>
+      <div class="top-bar-right">
+        <div class="search-wrapper">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input type="text" id="search-input" class="search-input" placeholder="搜尋提示詞...">
+        </div>
+        <button id="btn-add-prompt" class="btn-primary">
+          <span class="material-symbols-outlined">add</span>
+          新增
+        </button>
+        <button id="btn-settings" class="btn-icon" title="設定">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 分類篩選列 -->
+    <section class="filter-bar" id="filter-bar">
+      <button class="chip active" data-category="all">
+        <span class="material-symbols-outlined">apps</span>
+        <span>全部</span>
+      </button>
+      <!-- 動態生成的分類篩選 chips -->
+    </section>
+
+    <!-- 提示詞卡片網格 -->
+    <main class="card-grid" id="card-grid">
+      <!-- 動態生成的卡片 -->
+    </main>
+
+    <!-- 空狀態 -->
+    <div class="empty-state hidden" id="empty-state">
+      <span class="material-symbols-outlined empty-icon">inventory_2</span>
+      <p class="empty-title">尚無提示詞</p>
+      <p class="empty-desc">點擊「新增」開始建立你的第一個提示詞</p>
+    </div>
+
+    <!-- 搜尋無結果 -->
+    <div class="empty-state hidden" id="no-results">
+      <span class="material-symbols-outlined empty-icon">search_off</span>
+      <p class="empty-title">找不到相關提示詞</p>
+      <p class="empty-desc">試試其他關鍵字或分類</p>
+    </div>
+
+    <!-- 底部統計 -->
+    <section class="stats-bar" id="stats-bar">
+      <div class="stats-info">
+        <p class="stats-label">提示詞庫</p>
+        <p class="stats-count"><span id="prompt-count">0</span> 個提示詞已儲存</p>
+      </div>
+      <div class="stats-actions">
+        <button id="btn-import" class="btn-secondary" title="匯入">
+          <span class="material-symbols-outlined">upload</span>
+          匯入
+        </button>
+        <button id="btn-export" class="btn-secondary" title="匯出">
+          <span class="material-symbols-outlined">download</span>
+          匯出
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 新增/編輯提示詞面板 ===== -->
+  <div id="prompt-editor" class="editor-panel hidden">
+    <header class="editor-header">
+      <button id="btn-editor-back" class="btn-icon">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h2 id="editor-title" class="editor-title">新增提示詞</h2>
+      <button id="btn-editor-delete" class="btn-icon btn-danger hidden" title="刪除">
+        <span class="material-symbols-outlined">delete</span>
+      </button>
+    </header>
+    <div class="editor-body">
+      <div class="field-group">
+        <label class="field-label" for="field-name">標題</label>
+        <input type="text" id="field-name" class="field-input" placeholder="為你的提示詞命名" maxlength="100">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="field-content">提示詞內容</label>
+        <textarea id="field-content" class="field-textarea" placeholder="在此輸入你的提示詞..." rows="8"></textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="field-category">分類</label>
+        <div class="category-select-wrapper">
+          <select id="field-category" class="field-select">
+            <option value="">選擇分類</option>
+          </select>
+          <button id="btn-new-category" class="btn-icon-sm" title="建立新分類">
+            <span class="material-symbols-outlined">add_circle</span>
+          </button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-checkbox-wrapper">
+          <input type="checkbox" id="field-favorite">
+          <span class="material-symbols-outlined star-icon">star</span>
+          <span>加入收藏</span>
+        </label>
+      </div>
+    </div>
+    <footer class="editor-footer">
+      <button id="btn-editor-cancel" class="btn-secondary">取消</button>
+      <button id="btn-editor-save" class="btn-primary">儲存</button>
+    </footer>
+  </div>
+
+  <!-- ===== 提示詞詳情面板 ===== -->
+  <div id="prompt-detail" class="detail-panel hidden">
+    <header class="editor-header">
+      <button id="btn-detail-back" class="btn-icon">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h2 id="detail-title" class="editor-title"></h2>
+      <div class="detail-actions">
+        <button id="btn-detail-edit" class="btn-icon" title="編輯">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button id="btn-detail-fav" class="btn-icon" title="收藏">
+          <span class="material-symbols-outlined">star</span>
+        </button>
+      </div>
+    </header>
+    <div class="detail-body">
+      <div class="detail-meta">
+        <span class="chip-sm" id="detail-category"></span>
+        <span class="meta-date" id="detail-date"></span>
+      </div>
+      <div class="detail-content" id="detail-content"></div>
+    </div>
+    <footer class="detail-footer">
+      <button id="btn-detail-copy" class="btn-primary btn-full">
+        <span class="material-symbols-outlined">content_copy</span>
+        複製提示詞
+      </button>
+    </footer>
+  </div>
+
+  <!-- ===== 設定面板 ===== -->
+  <div id="settings-panel" class="settings-panel hidden">
+    <header class="editor-header">
+      <button id="btn-settings-back" class="btn-icon">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h2 class="editor-title">設定</h2>
+    </header>
+    <div class="settings-body">
+      <h3 class="settings-section-title">分類管理</h3>
+      <div id="category-list" class="category-list">
+        <!-- 動態生成的分類列表 -->
+      </div>
+      <div class="add-category-row">
+        <input type="text" id="new-category-name" class="field-input" placeholder="新分類名稱" maxlength="30">
+        <input type="text" id="new-category-icon" class="field-input field-icon" placeholder="圖示" maxlength="20" value="label">
+        <button id="btn-add-category" class="btn-primary btn-sm">新增</button>
+      </div>
+      <h3 class="settings-section-title">資料管理</h3>
+      <div class="settings-actions">
+        <button id="btn-settings-import" class="btn-secondary btn-full">
+          <span class="material-symbols-outlined">upload</span>
+          匯入資料 (JSON)
+        </button>
+        <button id="btn-settings-export" class="btn-secondary btn-full">
+          <span class="material-symbols-outlined">download</span>
+          匯出資料 (JSON)
+        </button>
+        <button id="btn-settings-clear" class="btn-danger-full">
+          <span class="material-symbols-outlined">delete_forever</span>
+          清除所有資料
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 新增分類對話框 ===== -->
+  <div id="category-dialog" class="dialog-overlay hidden">
+    <div class="dialog-box">
+      <h3 class="dialog-title">建立新分類</h3>
+      <div class="field-group">
+        <label class="field-label" for="dialog-cat-name">分類名稱</label>
+        <input type="text" id="dialog-cat-name" class="field-input" placeholder="例如：行銷、設計..." maxlength="30">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="dialog-cat-icon">圖示名稱</label>
+        <input type="text" id="dialog-cat-icon" class="field-input" placeholder="Material icon 名稱" value="label" maxlength="20">
+        <p class="field-hint">使用 <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">Material Symbols</a> 圖示名稱</p>
+      </div>
+      <div class="dialog-actions">
+        <button id="btn-dialog-cancel" class="btn-secondary">取消</button>
+        <button id="btn-dialog-confirm" class="btn-primary">建立</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 確認對話框 ===== -->
+  <div id="confirm-dialog" class="dialog-overlay hidden">
+    <div class="dialog-box">
+      <h3 class="dialog-title" id="confirm-title">確認</h3>
+      <p class="dialog-message" id="confirm-message"></p>
+      <div class="dialog-actions">
+        <button id="btn-confirm-cancel" class="btn-secondary">取消</button>
+        <button id="btn-confirm-ok" class="btn-danger-sm">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- 隱藏的檔案輸入 -->
+  <input type="file" id="file-import" accept=".json" class="hidden">
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

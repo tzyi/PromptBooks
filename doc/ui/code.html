@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Digital Archivist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#0c0e10",
+                        "surface-container": "#161a1e",
+                        "secondary-dim": "#9f9da1",
+                        "error-dim": "#b95463",
+                        "on-primary": "#27339b",
+                        "on-primary-container": "#c9cdff",
+                        "on-background": "#e0e6ed",
+                        "secondary": "#9f9da1",
+                        "on-secondary-fixed-variant": "#5c5b5f",
+                        "on-secondary": "#202023",
+                        "surface": "#0c0e10",
+                        "on-surface-variant": "#a6acb3",
+                        "secondary-fixed-dim": "#d6d3d8",
+                        "tertiary-fixed-dim": "#c7d1ee",
+                        "on-tertiary-fixed-variant": "#4f5a72",
+                        "surface-tint": "#bdc2ff",
+                        "tertiary": "#e9edff",
+                        "on-tertiary-container": "#455068",
+                        "surface-bright": "#262d33",
+                        "surface-container-low": "#111416",
+                        "on-primary-fixed-variant": "#4551b8",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-highest": "#20262c",
+                        "secondary-fixed": "#e4e1e6",
+                        "surface-container-high": "#1b2025",
+                        "on-error": "#490013",
+                        "outline": "#70767d",
+                        "primary": "#bdc2ff",
+                        "tertiary-dim": "#c7d1ee",
+                        "on-tertiary-fixed": "#333d55",
+                        "primary-container": "#2e3aa2",
+                        "on-secondary-container": "#c1bec3",
+                        "tertiary-container": "#d5dffd",
+                        "primary-dim": "#acb3ff",
+                        "background": "#0c0e10",
+                        "on-surface": "#e0e6ed",
+                        "inverse-primary": "#4854bb",
+                        "outline-variant": "#42494f",
+                        "error": "#ec7c8a",
+                        "primary-fixed-dim": "#ced1ff",
+                        "secondary-container": "#3b3b3f",
+                        "on-error-container": "#ff97a3",
+                        "surface-variant": "#20262c",
+                        "primary-fixed": "#dfe0ff",
+                        "inverse-on-surface": "#545557",
+                        "on-primary-fixed": "#26329a",
+                        "tertiary-fixed": "#d5dffd",
+                        "on-tertiary": "#4e5871",
+                        "on-secondary-fixed": "#3f3f43",
+                        "error-container": "#7f2737",
+                        "inverse-surface": "#f9f9fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #42494f26;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #70767d;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30 antialiased overflow-x-hidden">
+<!-- TopNavBar Implementation from JSON -->
+<header class="bg-slate-950/70 backdrop-blur-md docked full-width top-0 sticky z-50 flex justify-between items-center px-4 py-3 w-full border-b border-slate-800/50">
+<div class="flex flex-col gap-1">
+<h1 class="text-lg font-bold tracking-tight text-slate-100 font-headline">The Digital Archivist</h1>
+<div class="flex items-center gap-4">
+<nav class="flex gap-4 font-['Inter'] body-md tracking-tight">
+<a class="text-indigo-300 border-b-2 border-indigo-500 pb-1" href="#">All Prompts</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors duration-200" href="#">Favorites</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors duration-200" href="#">Collections</a>
+</nav>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<!-- Search Bar Integration -->
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="bg-surface-container-low border-none focus:ring-1 focus:ring-primary/40 rounded-xl pl-9 pr-4 py-1.5 text-xs text-on-surface w-40 placeholder:text-slate-600 transition-all" placeholder="Search prompts..." type="text"/>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 rounded-xl text-xs font-label font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-slate-800/50 transition-all scale-98 active:opacity-80">
+<span class="material-symbols-outlined text-sm">add</span>
+                Add Prompt
+            </button>
+<button class="text-slate-400 hover:text-slate-100 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<main class="p-4 flex flex-col gap-6">
+<!-- Compact Filter Bar (SideNavBar logic moved here for space efficiency) -->
+<section class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+<button class="flex items-center gap-2 text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20 whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest">Productivity</span>
+</button>
+<button class="flex items-center gap-2 text-slate-500 hover:text-slate-300 bg-surface-container-low px-3 py-1.5 rounded-full whitespace-nowrap transition-all">
+<span class="material-symbols-outlined text-[18px]">palette</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest">Creative</span>
+</button>
+<button class="flex items-center gap-2 text-slate-500 hover:text-slate-300 bg-surface-container-low px-3 py-1.5 rounded-full whitespace-nowrap transition-all">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest">Coding</span>
+</button>
+<button class="flex items-center gap-2 text-slate-500 hover:text-slate-300 bg-surface-container-low px-3 py-1.5 rounded-full whitespace-nowrap transition-all">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest">Academic</span>
+</button>
+<button class="flex items-center gap-2 text-slate-500 hover:text-slate-300 bg-surface-container-low px-3 py-1.5 rounded-full whitespace-nowrap transition-all">
+<span class="material-symbols-outlined text-[18px]">history_edu</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest">Writing</span>
+</button>
+</section>
+<!-- Prompt Cards Grid (Optimized for Sidebar) -->
+<!-- User requested 4 columns, we'll implement responsive grid that targets 4 columns in wider panels and stacks in narrowest -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+<!-- Card 1 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">Python Script Refactor</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Coding</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">2d ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">Creative Plot Twists</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Writing</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">5d ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">Deep Research Summary</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Academic</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">1w ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">Meeting Minute Synth</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Productivity</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">2w ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">System Design Prompt</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Coding</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">3w ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">Marketing Copy Gen</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Creative</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">1mo ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 7 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">SQL Query Helper</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Coding</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">1mo ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Card 8 -->
+<div class="group bg-surface-container-highest p-4 rounded-xl transition-all duration-200 hover:bg-surface-bright hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between aspect-square border border-outline-variant/10">
+<h3 class="text-on-surface font-headline font-semibold text-sm leading-tight group-hover:text-primary transition-colors">Character Bio Base</h3>
+<div class="flex flex-col gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-[9px] uppercase tracking-tighter w-fit">Writing</span>
+<div class="flex justify-between items-center mt-1">
+<span class="text-[10px] text-on-surface-variant font-label">2mo ago</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Information / Archivist Stats -->
+<section class="mt-8 pt-6 border-t border-outline-variant/15">
+<div class="bg-surface-container p-4 rounded-xl flex items-center justify-between overflow-hidden relative">
+<div class="relative z-10">
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Archivist Status</p>
+<h4 class="text-primary font-headline font-bold text-xl tracking-tight">Pro Plan Active</h4>
+<p class="text-on-surface-variant text-xs mt-1">128 prompts stored safely.</p>
+</div>
+<div class="absolute -right-4 -top-4 opacity-10">
+<span class="material-symbols-outlined text-[100px] text-primary" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<button class="relative z-10 bg-surface-bright px-3 py-1.5 rounded-lg text-xs font-label font-semibold text-on-surface hover:bg-surface-container-highest transition-colors">
+                    Manage
+                </button>
+</div>
+</section>
+</main>
+<!-- Bottom Action Sheet (Mobile/Narrow Sidebar specific) -->
+<footer class="fixed bottom-0 left-0 w-full p-4 bg-gradient-to-t from-surface via-surface to-transparent pointer-events-none">
+<div class="flex justify-center pointer-events-auto">
+<button class="bg-primary hover:bg-primary-dim text-on-primary shadow-2xl px-6 py-3 rounded-full flex items-center gap-3 transition-transform active:scale-95">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-label font-bold uppercase tracking-widest text-xs">New Archive Entry</span>
+</button>
+</div>
+</footer>
+</body></html>
