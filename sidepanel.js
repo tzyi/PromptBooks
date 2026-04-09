@@ -786,6 +786,13 @@ function bindEvents() {
     fbWrapper.classList.toggle('fb-at-end', atEnd);
   }
   dom.filterBar.addEventListener('scroll', updateFilterBarFade, { passive: true });
+  // 滑鼠滾輪左右捲動分類列
+  dom.filterBar.addEventListener('wheel', (e) => {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      dom.filterBar.scrollBy({ left: e.deltaY, behavior: 'smooth' });
+    }
+  }, { passive: false });
   // 初始化（分類若未超出寬度則不顯示右側漸層）
   updateFilterBarFade();
 
