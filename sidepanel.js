@@ -234,6 +234,14 @@ function renderFilterBar() {
     chip.innerHTML = `<span class="material-symbols-outlined">${sanitize(cat.icon)}</span><span>${sanitize(cat.name)}</span>`;
     bar.appendChild(chip);
   }
+
+  // 重繪後更新漸層提示（若 wrapper 已存在）
+  const fbWrapper = document.getElementById('filter-bar-wrapper');
+  if (fbWrapper) {
+    const atEnd = bar.scrollLeft + bar.clientWidth >= bar.scrollWidth - 2;
+    fbWrapper.classList.toggle('fb-scrolled', bar.scrollLeft > 2);
+    fbWrapper.classList.toggle('fb-at-end', atEnd);
+  }
 }
 
 function renderCards() {
@@ -501,6 +509,142 @@ async function deleteCategory(catId) {
 }
 
 // ============================================================
+// Filter Bar Drag-and-Drop Reorder
+// ============================================================
+
+function setupFilterBarDnD() {
+  const bar = dom.filterBar;
+  let dragState = null; // { el, startX, origCats, dragging }
+
+  function onMove(e) {
+    if (!dragState) return;
+
+    if (!dragState.dragging) {
+      if (Math.abs(e.clientX - dragState.startX) < 8) return;
+      dragState.dragging = true;
+      dragState.el.classList.add('chip-dragging');
+    }
+
+    // chip-dragging 設定 pointer-events:none，elementFromPoint 會自動跳過它
+    const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+    const overChip = elUnder?.closest('.chip[data-category]');
+    if (!overChip || overChip === dragState.el || overChip.dataset.category === 'all') return;
+
+    const rect = overChip.getBoundingClientRect();
+    if (e.clientX < rect.left + rect.width / 2) {
+      bar.insertBefore(dragState.el, overChip);
+    } else {
+      bar.insertBefore(dragState.el, overChip.nextSibling);
+    }
+  }
+
+  async function onUp() {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    if (!dragState) return;
+
+    const { el, dragging, origCats } = dragState;
+    dragState = null;
+    el.classList.remove('chip-dragging');
+
+    if (!dragging) return;
+
+    // 從 DOM 讀取新順序並儲存
+    const newOrder = [];
+    bar.querySelectorAll('.chip[data-category]').forEach((chip) => {
+      if (chip.dataset.category !== 'all') {
+        const cat = origCats.find((c) => c.id === chip.dataset.category);
+        if (cat) newOrder.push(cat);
+      }
+    });
+    state.categories = newOrder;
+    await saveCategories(state.categories);
+    renderCategoryList();
+
+    // 防止拖曳結束後觸發 click 事件切換分類
+    el.addEventListener('click', (ev) => ev.stopPropagation(), { capture: true, once: true });
+  }
+
+  function onCancel() {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    if (!dragState) return;
+    const { el, origCats } = dragState;
+    dragState = null;
+    el.classList.remove('chip-dragging');
+    state.categories = origCats;
+    renderFilterBar();
+  }
+
+  bar.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return; // 只處理滑鼠左鍵
+    const chip = e.target.closest('.chip');
+    if (!chip || chip.dataset.category === 'all') return;
+
+    dragState = { el: chip, startX: e.clientX, origCats: [...state.categories], dragging: false };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onCancel);
+  });
+}
+
+// ============================================================
+// Swipe Navigation（左右滑動切換分類）
+// ============================================================
+
+function scrollActiveChipIntoView() {
+  const activeChip = dom.filterBar.querySelector('.chip.active');
+  if (activeChip) {
+    activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+}
+
+function setupSwipeNavigation() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  const getCategoryList = () => ['all', ...state.categories.map((c) => c.id)];
+
+  const handleSwipe = (dx, dy) => {
+    // 水平位移 < 50px 或垂直位移大於水平時忽略
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.8) return;
+
+    const list = getCategoryList();
+    const idx = list.indexOf(state.activeCategory);
+    const newIdx = dx < 0
+      ? Math.min(idx + 1, list.length - 1)  // 向左滑 → 下一分類
+      : Math.max(idx - 1, 0);               // 向右滑 → 上一分類
+
+    if (newIdx === idx) return;
+
+    state.activeCategory = list[newIdx];
+    renderFilterBar();
+    renderCards();
+    scrollActiveChipIntoView();
+  };
+
+  const onTouchStart = (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  };
+
+  const onTouchEnd = (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    handleSwipe(dx, dy);
+  };
+
+  // 在卡片區域、空狀態區域都支援滑動
+  [dom.cardGrid, dom.emptyState, dom.noResults].forEach((el) => {
+    if (!el) return;
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+  });
+}
+
+// ============================================================
 // Import / Export
 // ============================================================
 
@@ -625,7 +769,25 @@ function bindEvents() {
     state.activeCategory = chip.dataset.category;
     renderFilterBar();
     renderCards();
+    scrollActiveChipIntoView();
   });
+
+  setupFilterBarDnD();
+  setupSwipeNavigation();
+
+  // --- Filter Bar scroll → 更新漸層提示 ---
+  const fbWrapper = document.getElementById('filter-bar-wrapper');
+  function updateFilterBarFade() {
+    if (!fbWrapper) return;
+    const bar = dom.filterBar;
+    const atStart = bar.scrollLeft <= 2;
+    const atEnd = bar.scrollLeft + bar.clientWidth >= bar.scrollWidth - 2;
+    fbWrapper.classList.toggle('fb-scrolled', !atStart);
+    fbWrapper.classList.toggle('fb-at-end', atEnd);
+  }
+  dom.filterBar.addEventListener('scroll', updateFilterBarFade, { passive: true });
+  // 初始化（分類若未超出寬度則不顯示右側漸層）
+  updateFilterBarFade();
 
   // --- Card Grid (event delegation) ---
   dom.cardGrid.addEventListener('click', (e) => {

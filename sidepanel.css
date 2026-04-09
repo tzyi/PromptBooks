@@ -348,6 +348,46 @@ a:hover {
 }
 
 /* --- Filter Bar (Chips) --- */
+.filter-bar-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 左側漸層（有往左捲動內容時顯示） */
+.filter-bar-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 100%;
+  background: linear-gradient(to right, var(--surface) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+/* 右側漸層（預設顯示，提示可往右捲動） */
+.filter-bar-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 100%;
+  background: linear-gradient(to left, var(--surface) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+.filter-bar-wrapper.fb-scrolled::before {
+  opacity: 1;
+}
+.filter-bar-wrapper.fb-at-end::after {
+  opacity: 0;
+}
+
 .filter-bar {
   display: flex;
   gap: 8px;
@@ -390,6 +430,18 @@ a:hover {
 }
 .chip .material-symbols-outlined {
   font-size: 16px;
+}
+
+/* 分類 chip 可拖曳排序（滑鼠左鍵長按拖曳） */
+.chip:not([data-category="all"]) {
+  cursor: grab;
+}
+/* 拖曳中：半透明、縮小、不接收點擊 */
+.chip.chip-dragging {
+  opacity: 0.35;
+  transform: scale(0.92);
+  pointer-events: none;
+  cursor: grabbing;
 }
 
 .chip-sm {
