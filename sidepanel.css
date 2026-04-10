@@ -666,6 +666,16 @@ a:hover {
   border-color: rgba(189, 194, 255, 0.18);
 }
 
+/* Prevent fav/pin badges from overlapping the title */
+.prompt-card:has(.card-fav) .card-title,
+.prompt-card:has(.card-pin-badge) .card-title {
+  padding-left: 18px;
+}
+
+.prompt-card:has(.card-fav):has(.card-pin-badge) .card-title {
+  padding-left: 34px;
+}
+
 /* --- Card Responsive Adaptations (Container Queries) --- */
 
 /* Ultra narrow: hide preview, show only title + category */
