@@ -4,6 +4,129 @@
 'use strict';
 
 // ============================================================
+// AI 平台注入函數（此函數會被序列化並注入到目標分頁；必須完全獨立，不可依賴外部變數）
+// ============================================================
+
+function _injectAndSubmit(text) {
+  return new Promise((resolve) => {
+    const h = window.location.hostname;
+    let platform = null;
+    if (h.includes('claude.ai')) platform = 'claude';
+    else if (h.includes('chatgpt.com') || h.includes('chat.openai.com')) platform = 'chatgpt';
+    else if (h.includes('gemini.google.com')) platform = 'gemini';
+
+    if (!platform) {
+      resolve({ ok: false, err: 'unsupported' });
+      return;
+    }
+
+    // ---- 尋找輸入框 ----
+    let input = null;
+    if (platform === 'claude') {
+      // Claude 使用 ProseMirror，data-placeholder 屬性可幫助定位真正的編輯器
+      input = document.querySelector('div[contenteditable="true"][data-placeholder]')
+           || document.querySelector('div.ProseMirror[contenteditable="true"]')
+           || document.querySelector('fieldset div[contenteditable="true"]')
+           || document.querySelector('div[contenteditable="true"]');
+    } else if (platform === 'chatgpt') {
+      input = document.querySelector('#prompt-textarea')
+           || document.querySelector('div[contenteditable="true"]');
+    } else if (platform === 'gemini') {
+      input = document.querySelector('.ql-editor[contenteditable="true"]')
+           || document.querySelector('rich-textarea [contenteditable="true"]')
+           || document.querySelector('div[contenteditable="true"]');
+    }
+
+    if (!input) {
+      resolve({ ok: false, err: 'no_input' });
+      return;
+    }
+
+    // ---- 清空現有內容並插入新文字 ----
+    input.focus();
+
+    // 先全選再插入，讓 ProseMirror / React controlled input 都能正確接收
+    document.execCommand('selectAll', false, null);
+    const inserted = document.execCommand('insertText', false, text);
+
+    // execCommand 後備：直接操作 DOM 並派送 input 事件
+    if (!inserted || input.textContent.trim() === '') {
+      // 清空舊內容
+      input.innerHTML = '';
+      // 建立文字節點插入
+      const textNode = document.createTextNode(text);
+      input.appendChild(textNode);
+      // 將游標移到尾端
+      const range = document.createRange();
+      range.selectNodeContents(input);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      input.dispatchEvent(new InputEvent('input', {
+        bubbles: true, cancelable: true, inputType: 'insertText', data: text
+      }));
+    }
+
+    // 等待框架 digest 後嘗試點擊送出按鈕
+    setTimeout(() => {
+      let btn = null;
+
+      if (platform === 'claude') {
+        // Claude 的送出按鈕通常緊鄰輸入區，尋找最近的 button[type="button"] 或帶有 send/arrow 類名
+        btn = document.querySelector('button[aria-label="Send Message"]')
+           || document.querySelector('button[aria-label="Send"]')
+           || document.querySelector('button[data-testid="send-button"]');
+        // 後備：在輸入框的父容器中找最後一個未 disabled 的 button
+        if (!btn) {
+          const container = input.closest('form, fieldset, [class*="composer"], [class*="input"]');
+          if (container) {
+            const btns = [...container.querySelectorAll('button')].filter(b => !b.disabled);
+            if (btns.length) btn = btns[btns.length - 1];
+          }
+        }
+        // 全頁後備
+        if (!btn) {
+          const allBtns = [...document.querySelectorAll('button')].filter(
+            b => !b.disabled && b.offsetParent !== null
+          );
+          // 找靠近輸入框的那個
+          const inputRect = input.getBoundingClientRect();
+          allBtns.sort((a, b) => {
+            const ar = a.getBoundingClientRect();
+            const br = b.getBoundingClientRect();
+            const ad = Math.hypot(ar.left - inputRect.right, ar.top - inputRect.top);
+            const bd = Math.hypot(br.left - inputRect.right, br.top - inputRect.top);
+            return ad - bd;
+          });
+          if (allBtns[0]) btn = allBtns[0];
+        }
+      } else if (platform === 'chatgpt') {
+        btn = document.querySelector('button[data-testid="send-button"]')
+           || document.querySelector('button[aria-label="Send prompt"]')
+           || document.querySelector('#composer-submit-button');
+      } else if (platform === 'gemini') {
+        btn = document.querySelector('button[aria-label="Send message"]')
+           || document.querySelector('button[jsname="Qx7uuf"]')
+           || document.querySelector('button.send-button');
+      }
+
+      if (btn && !btn.disabled) {
+        btn.click();
+        resolve({ ok: true });
+      } else {
+        // 最終後備：對輸入框派送 Enter keydown
+        input.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'Enter', code: 'Enter', keyCode: 13,
+          bubbles: true, cancelable: true, composed: true
+        }));
+        resolve({ ok: true, warn: 'used_enter_fallback' });
+      }
+    }, 800);
+  });
+}
+
+// ============================================================
 // Data Layer
 // ============================================================
 
@@ -157,6 +280,56 @@ async function copyToClipboard(text) {
 }
 
 // ============================================================
+// 送出提示詞至 AI 平台
+// ============================================================
+
+async function sendPromptToAI(text) {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+    if (!tab) {
+      showToast('找不到目前的分頁');
+      return;
+    }
+
+    const url = tab.url || '';
+    const supported = url.includes('claude.ai')
+      || url.includes('chatgpt.com')
+      || url.includes('chat.openai.com')
+      || url.includes('gemini.google.com');
+
+    if (!supported) {
+      showToast('請切換到 Claude、ChatGPT 或 Gemini 分頁');
+      return;
+    }
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: _injectAndSubmit,
+      args: [text],
+    });
+
+    const result = results?.[0]?.result;
+    if (result?.ok) {
+      showToast('已送出至 AI！');
+    } else if (result?.err === 'no_input') {
+      showToast('找不到輸入框，請確認頁面已載入完成');
+    } else if (result?.err === 'unsupported') {
+      showToast('不支援此平台');
+    } else {
+      showToast('送出失敗，請重試');
+    }
+  } catch (err) {
+    console.error('[PromptBooks] sendPromptToAI:', err);
+    if (err.message?.includes('Cannot access') || err.message?.includes('Missing host')) {
+      showToast('請切換到 Claude、ChatGPT 或 Gemini 分頁');
+    } else {
+      showToast('送出失敗：請重試');
+    }
+  }
+}
+
+// ============================================================
 // Variable Modal（完全由 JS 動態建立，不依賴 HTML）
 // ============================================================
 
@@ -217,7 +390,7 @@ function _buildVariableModal() {
 
   // ----- 副標題 -----
   const subtitle = document.createElement('p');
-  subtitle.textContent = '此提示詞包含變數，請填寫後複製';
+  subtitle.textContent = '此提示詞包含變數，請填寫後選擇複製或送出';
   Object.assign(subtitle.style, {
     fontSize: '12px',
     color: 'var(--on-surface-variant, #a6acb3)',
@@ -239,20 +412,28 @@ function _buildVariableModal() {
     gap: '8px',
     justifyContent: 'flex-end',
     marginTop: '4px',
+    flexWrap: 'wrap',
   });
 
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = '取消';
   cancelBtn.className = 'btn-secondary';
+  cancelBtn.style.marginRight = 'auto';
   cancelBtn.addEventListener('click', _closeModal);
 
   const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn-primary';
+  copyBtn.className = 'btn-secondary';
   copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">content_copy</span> 複製';
   copyBtn.addEventListener('click', _applyAndCopy);
 
+  const sendBtn = document.createElement('button');
+  sendBtn.className = 'btn-primary';
+  sendBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">send</span> 送出';
+  sendBtn.addEventListener('click', _applyAndSend);
+
   actions.appendChild(cancelBtn);
   actions.appendChild(copyBtn);
+  actions.appendChild(sendBtn);
 
   // ----- 組裝 -----
   box.appendChild(title);
@@ -267,9 +448,15 @@ function _buildVariableModal() {
     if (e.target === overlay) _closeModal();
   });
 
-  // Enter 鍵送出
+  // Enter 鍵觸發送出（Ctrl+Enter 或 Shift+Enter 改為複製）
   fieldsDiv.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') _applyAndCopy();
+    if (e.key === 'Enter') {
+      if (e.ctrlKey || e.shiftKey) {
+        _applyAndCopy();
+      } else {
+        _applyAndSend();
+      }
+    }
   });
 
   _varModalEl = overlay;
@@ -295,14 +482,29 @@ function extractVariables(content) {
 // 按下複製時的入口
 function copyPromptContent(content) {
   const vars = extractVariables(content);
-
   if (vars.length === 0) {
     copyToClipboard(content);
     return;
   }
+  _openVariableModal(content);
+}
 
+// 按下送出時的入口
+function sendPromptContent(content) {
+  const vars = extractVariables(content);
+  if (vars.length === 0) {
+    sendPromptToAI(content);
+    return;
+  }
+  _openVariableModal(content);
+}
+
+// 開啟「填寫變數」Modal（共用）
+function _openVariableModal(content) {
   _pendingContent = content;
   _buildVariableModal();
+
+  const vars = extractVariables(content);
 
   // 清空並重建欄位
   _varFieldsEl.innerHTML = '';
@@ -372,6 +574,23 @@ function _applyAndCopy() {
 
   _closeModal();
   copyToClipboard(content);
+}
+
+function _applyAndSend() {
+  if (!_varFieldsEl) return;
+  let content = _pendingContent;
+
+  _varFieldsEl.querySelectorAll('input[data-var-name]').forEach((input) => {
+    const name = input.dataset.varName;
+    const val = input.value;
+    const pattern = new RegExp(
+      `\\{\\{\\s*${_escapeRe(name)}\\s*\\}\\}`, 'g'
+    );
+    content = content.replace(pattern, val);
+  });
+
+  _closeModal();
+  sendPromptToAI(content);
 }
 
 function _closeModal() {
@@ -510,6 +729,9 @@ function renderCards() {
     card.innerHTML = `
       ${favHtml}
       ${pinHtml}
+      <button class="card-send-btn" data-send-id="${sanitize(prompt.id)}" title="送出至 AI">
+        <span class="material-symbols-outlined">send</span>
+      </button>
       <button class="card-copy-btn" data-copy-id="${sanitize(prompt.id)}" title="複製提示詞">
         <span class="material-symbols-outlined">content_copy</span>
       </button>
@@ -1107,6 +1329,18 @@ function bindEvents() {
 
   // --- Card Grid (event delegation) ---
   dom.cardGrid.addEventListener('click', (e) => {
+    // Send button
+    const sendBtn = e.target.closest('.card-send-btn');
+    if (sendBtn) {
+      e.stopPropagation();
+      const id = sendBtn.dataset.sendId;
+      const prompt = state.prompts.find((p) => p.id === id);
+      if (prompt) {
+        sendPromptContent(prompt.content);
+      }
+      return;
+    }
+
     // Copy button
     const copyBtn = e.target.closest('.card-copy-btn');
     if (copyBtn) {
@@ -1206,6 +1440,12 @@ function bindEvents() {
     const prompt = state.prompts.find((p) => p.id === currentDetailId);
     if (prompt) {
       copyPromptContent(prompt.content);
+    }
+  });
+  $('#btn-detail-send').addEventListener('click', () => {
+    const prompt = state.prompts.find((p) => p.id === currentDetailId);
+    if (prompt) {
+      sendPromptContent(prompt.content);
     }
   });
 

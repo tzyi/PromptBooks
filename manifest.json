@@ -5,7 +5,16 @@
   "description": "儲存、管理並快速取用常用的 AI 提示詞",
   "permissions": [
     "storage",
-    "sidePanel"
+    "sidePanel",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://claude.ai/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://gemini.google.com/*"
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
