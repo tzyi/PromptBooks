@@ -440,8 +440,11 @@ function getFilteredPrompts() {
     );
   }
 
-  // Sort by updatedAt descending
-  list.sort((a, b) => b.updatedAt - a.updatedAt);
+  // Sort: pinned first, then by updatedAt descending
+  list.sort((a, b) => {
+    if (!!b.pinned !== !!a.pinned) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+    return b.updatedAt - a.updatedAt;
+  });
 
   return list;
 }
@@ -491,7 +494,7 @@ function renderCards() {
   for (const prompt of filtered) {
     const cat = state.categories.find((c) => c.id === prompt.categoryId);
     const card = document.createElement('div');
-    card.className = 'prompt-card';
+    card.className = `prompt-card${prompt.pinned ? ' is-pinned' : ''}`;
     card.dataset.id = prompt.id;
 
     let favHtml = '';
@@ -499,8 +502,14 @@ function renderCards() {
       favHtml = '<span class="material-symbols-outlined card-fav" style="font-variation-settings: \'FILL\' 1;">star</span>';
     }
 
+    let pinHtml = '';
+    if (prompt.pinned) {
+      pinHtml = '<span class="material-symbols-outlined card-pin-badge" title="已置頂">push_pin</span>';
+    }
+
     card.innerHTML = `
       ${favHtml}
+      ${pinHtml}
       <button class="card-copy-btn" data-copy-id="${sanitize(prompt.id)}" title="複製提示詞">
         <span class="material-symbols-outlined">content_copy</span>
       </button>
@@ -694,6 +703,75 @@ async function toggleFavorite(promptId) {
     dom.btnDetailFav.classList.remove('btn-fav-active');
     showToast('已取消收藏');
   }
+}
+
+// ============================================================
+// Pin Logic
+// ============================================================
+
+async function togglePin(promptId) {
+  const prompt = state.prompts.find((p) => p.id === promptId);
+  if (!prompt) return;
+  prompt.pinned = !prompt.pinned;
+  await savePrompts(state.prompts);
+  renderAll();
+  showToast(prompt.pinned ? '已置頂' : '已取消置頂');
+}
+
+// ============================================================
+// Context Menu
+// ============================================================
+
+let _ctxMenuEl = null;
+let _ctxTargetId = null;
+
+function _buildContextMenu() {
+  if (_ctxMenuEl) return;
+
+  const menu = document.createElement('div');
+  menu.id = 'pb-context-menu';
+  document.body.appendChild(menu);
+  _ctxMenuEl = menu;
+}
+
+function showContextMenu(x, y, promptId) {
+  _buildContextMenu();
+  _ctxTargetId = promptId;
+
+  const prompt = state.prompts.find((p) => p.id === promptId);
+  if (!prompt) return;
+
+  const isPinned = !!prompt.pinned;
+
+  _ctxMenuEl.innerHTML = `
+    <button class="ctx-item" data-action="pin">
+      <span class="material-symbols-outlined">${isPinned ? 'keep_off' : 'push_pin'}</span>
+      <span>${isPinned ? '取消置頂' : '置頂'}</span>
+    </button>
+  `;
+
+  _ctxMenuEl.querySelectorAll('.ctx-item').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      if (action === 'pin') togglePin(_ctxTargetId);
+      hideContextMenu();
+    });
+  });
+
+  // Position
+  _ctxMenuEl.style.display = 'block';
+  const menuW = _ctxMenuEl.offsetWidth;
+  const menuH = _ctxMenuEl.offsetHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  _ctxMenuEl.style.left = `${Math.min(x, vw - menuW - 4)}px`;
+  _ctxMenuEl.style.top = `${Math.min(y, vh - menuH - 4)}px`;
+}
+
+function hideContextMenu() {
+  if (_ctxMenuEl) _ctxMenuEl.style.display = 'none';
+  _ctxTargetId = null;
 }
 
 // ============================================================
@@ -1048,6 +1126,18 @@ function bindEvents() {
     }
   });
 
+  // --- Card right-click context menu ---
+  dom.cardGrid.addEventListener('contextmenu', (e) => {
+    const card = e.target.closest('.prompt-card');
+    if (!card) return;
+    e.preventDefault();
+    showContextMenu(e.clientX, e.clientY, card.dataset.id);
+  });
+
+  // Close context menu on click outside / scroll / Escape
+  document.addEventListener('click', () => hideContextMenu());
+  document.addEventListener('scroll', () => hideContextMenu(), true);
+
   // --- Add Prompt ---
   $('#btn-add-prompt').addEventListener('click', () => openEditor(null));
 
@@ -1179,7 +1269,9 @@ function bindEvents() {
   document.addEventListener('keydown', (e) => {
     // Escape to go back
     if (e.key === 'Escape') {
-      if (isVariableModalOpen()) {
+      if (_ctxMenuEl && _ctxMenuEl.style.display !== 'none') {
+        hideContextMenu();
+      } else if (isVariableModalOpen()) {
         _closeModal();
       } else if (!dom.confirmDialog.classList.contains('hidden')) {
         dom.confirmDialog.classList.add('hidden');

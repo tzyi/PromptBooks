@@ -616,6 +616,27 @@ a:hover {
   opacity: 0.8;
 }
 
+/* Pin indicator */
+.prompt-card .card-pin-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 13px;
+  color: var(--primary);
+  opacity: 0.85;
+  font-variation-settings: 'FILL' 1;
+  pointer-events: none;
+  /* if fav + pin both exist, offset pin to the right of fav */
+}
+.prompt-card .card-fav ~ .card-pin-badge {
+  left: 26px;
+}
+
+/* Pinned card: subtle top border highlight */
+.prompt-card.is-pinned {
+  border-color: rgba(189, 194, 255, 0.18);
+}
+
 /* --- Card Responsive Adaptations (Container Queries) --- */
 
 /* Ultra narrow: hide preview, show only title + category */
@@ -1144,4 +1165,42 @@ a:hover {
 .btn-fav-active .material-symbols-outlined {
   color: #f5c842;
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* --- Context Menu --- */
+#pb-context-menu {
+  display: none;
+  position: fixed;
+  z-index: 99998;
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+  min-width: 140px;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  text-align: left;
+  white-space: nowrap;
+}
+.ctx-item:hover {
+  background: var(--surface-container-highest);
+}
+.ctx-item .material-symbols-outlined {
+  font-size: 16px;
+  color: var(--primary);
 }
