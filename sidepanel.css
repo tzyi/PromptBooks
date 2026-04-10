@@ -1075,6 +1075,24 @@ a:hover {
 .category-item .btn-icon .material-symbols-outlined {
   font-size: 16px;
 }
+.category-item.cat-editing {
+  gap: 6px;
+}
+.category-item.cat-editing .cat-edit-icon {
+  width: 60px;
+  min-width: 0;
+  flex: 0 0 60px;
+  padding: 4px 6px;
+  font-size: 12px;
+  height: 30px;
+}
+.category-item.cat-editing .cat-edit-name {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 13px;
+  height: 30px;
+}
 
 .add-category-row {
   display: flex;

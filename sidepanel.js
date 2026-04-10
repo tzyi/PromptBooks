@@ -774,10 +774,14 @@ function renderCategoryList() {
     const count = state.prompts.filter((p) => p.categoryId === cat.id).length;
     const item = document.createElement('div');
     item.className = 'category-item';
+    item.dataset.catId = sanitize(cat.id);
     item.innerHTML = `
       <span class="material-symbols-outlined">${sanitize(cat.icon)}</span>
       <span class="cat-name">${sanitize(cat.name)}</span>
       <span class="cat-count">${count}</span>
+      <button class="btn-icon btn-edit-cat" data-cat-id="${sanitize(cat.id)}" title="編輯分類">
+        <span class="material-symbols-outlined">edit</span>
+      </button>
       <button class="btn-icon btn-delete-cat" data-cat-id="${sanitize(cat.id)}" title="刪除分類">
         <span class="material-symbols-outlined">close</span>
       </button>
@@ -1013,6 +1017,23 @@ async function addCategory(name, icon) {
   renderCategoryList();
   renderCategorySelect();
   showToast('分類已新增');
+  return true;
+}
+
+async function editCategory(catId, newName, newIcon) {
+  if (!newName.trim()) {
+    showToast('請輸入分類名稱');
+    return false;
+  }
+  const cat = state.categories.find((c) => c.id === catId);
+  if (!cat) return false;
+  cat.name = newName.trim();
+  cat.icon = newIcon.trim() || 'label';
+  await saveCategories(state.categories);
+  renderAll();
+  renderCategoryList();
+  renderCategorySelect();
+  showToast('分類已更新');
   return true;
 }
 
@@ -1461,16 +1482,64 @@ function bindEvents() {
     }
   });
 
-  // Delete category (event delegation)
+  // Category list: edit / save / cancel / delete (event delegation)
   dom.categoryList.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-delete-cat');
-    if (!btn) return;
-    const catId = btn.dataset.catId;
+    // Edit button → switch to inline edit mode
+    const editBtn = e.target.closest('.btn-edit-cat');
+    if (editBtn) {
+      const catId = editBtn.dataset.catId;
+      const cat = state.categories.find((c) => c.id === catId);
+      if (!cat) return;
+      const item = editBtn.closest('.category-item');
+      item.classList.add('cat-editing');
+      item.innerHTML = `
+        <input class="cat-edit-icon field-input field-icon" value="${sanitize(cat.icon)}" maxlength="20" placeholder="圖示">
+        <input class="cat-edit-name field-input" value="${sanitize(cat.name)}" maxlength="30" placeholder="分類名稱">
+        <button class="btn-icon btn-save-cat" data-cat-id="${sanitize(cat.id)}" title="儲存">
+          <span class="material-symbols-outlined">check</span>
+        </button>
+        <button class="btn-icon btn-cancel-edit-cat" title="取消">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      `;
+      item.querySelector('.cat-edit-name').focus();
+      return;
+    }
+
+    // Save button → persist edits
+    const saveBtn = e.target.closest('.btn-save-cat');
+    if (saveBtn) {
+      const catId = saveBtn.dataset.catId;
+      const item = saveBtn.closest('.category-item');
+      const newName = item.querySelector('.cat-edit-name').value;
+      const newIcon = item.querySelector('.cat-edit-icon').value;
+      editCategory(catId, newName, newIcon);
+      return;
+    }
+
+    // Cancel button → revert to normal view
+    const cancelBtn = e.target.closest('.btn-cancel-edit-cat');
+    if (cancelBtn) {
+      renderCategoryList();
+      return;
+    }
+
+    // Delete button
+    const deleteBtn = e.target.closest('.btn-delete-cat');
+    if (!deleteBtn) return;
+    const catId = deleteBtn.dataset.catId;
     const cat = state.categories.find((c) => c.id === catId);
     if (!cat) return;
     showConfirm('刪除分類', `確定要刪除「${cat.name}」分類嗎？該分類下的提示詞不會被刪除。`, () => {
       deleteCategory(catId);
     });
+  });
+
+  // Allow pressing Enter in the category name/icon edit inputs to save
+  dom.categoryList.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const saveBtn = e.target.closest('.category-item.cat-editing')?.querySelector('.btn-save-cat');
+    if (saveBtn) saveBtn.click();
   });
 
   // Settings import/export
