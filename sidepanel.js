@@ -157,6 +157,237 @@ async function copyToClipboard(text) {
 }
 
 // ============================================================
+// Variable Modal（完全由 JS 動態建立，不依賴 HTML）
+// ============================================================
+
+let _varModalEl = null;     // 遮罩層
+let _varFieldsEl = null;    // 欄位容器
+let _pendingContent = '';   // 待複製的原始文字
+
+function _buildVariableModal() {
+  if (_varModalEl) return; // 已建立則跳過
+
+  // ----- 遮罩層 -----
+  const overlay = document.createElement('div');
+  overlay.id = 'pb-variable-modal';
+  Object.assign(overlay.style, {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    width: '100%',
+    height: '100%',
+    background: 'rgba(0,0,0,0.65)',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
+    zIndex: '99999',
+    display: 'none',          // 預設隱藏
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '16px',
+    boxSizing: 'border-box',
+  });
+
+  // ----- 對話框 -----
+  const box = document.createElement('div');
+  Object.assign(box.style, {
+    background: 'var(--surface-container-high, #1b2025)',
+    borderRadius: '12px',
+    padding: '20px',
+    width: '100%',
+    maxWidth: '340px',
+    maxHeight: '80vh',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+    boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+    boxSizing: 'border-box',
+  });
+
+  // ----- 標題 -----
+  const title = document.createElement('h3');
+  title.textContent = '填寫變數';
+  Object.assign(title.style, {
+    fontFamily: 'var(--font-headline, Inter, sans-serif)',
+    fontSize: '15px',
+    fontWeight: '600',
+    color: 'var(--on-surface, #e0e6ed)',
+    margin: '0',
+  });
+
+  // ----- 副標題 -----
+  const subtitle = document.createElement('p');
+  subtitle.textContent = '此提示詞包含變數，請填寫後複製';
+  Object.assign(subtitle.style, {
+    fontSize: '12px',
+    color: 'var(--on-surface-variant, #a6acb3)',
+    margin: '0',
+  });
+
+  // ----- 欄位容器 -----
+  const fieldsDiv = document.createElement('div');
+  Object.assign(fieldsDiv.style, {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  });
+
+  // ----- 按鈕列 -----
+  const actions = document.createElement('div');
+  Object.assign(actions.style, {
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'flex-end',
+    marginTop: '4px',
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '取消';
+  cancelBtn.className = 'btn-secondary';
+  cancelBtn.addEventListener('click', _closeModal);
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn-primary';
+  copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">content_copy</span> 複製';
+  copyBtn.addEventListener('click', _applyAndCopy);
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(copyBtn);
+
+  // ----- 組裝 -----
+  box.appendChild(title);
+  box.appendChild(subtitle);
+  box.appendChild(fieldsDiv);
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // 點擊遮罩關閉
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) _closeModal();
+  });
+
+  // Enter 鍵送出
+  fieldsDiv.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') _applyAndCopy();
+  });
+
+  _varModalEl = overlay;
+  _varFieldsEl = fieldsDiv;
+}
+
+// 偵測 {{ 變數名稱 }} 格式
+function extractVariables(content) {
+  const regex = /\{\{\s*([^{}]+?)\s*\}\}/g;
+  const seen = new Set();
+  const vars = [];
+  let m;
+  while ((m = regex.exec(content)) !== null) {
+    const name = m[1].trim();
+    if (name && !seen.has(name)) {
+      seen.add(name);
+      vars.push(name);
+    }
+  }
+  return vars;
+}
+
+// 按下複製時的入口
+function copyPromptContent(content) {
+  const vars = extractVariables(content);
+
+  if (vars.length === 0) {
+    copyToClipboard(content);
+    return;
+  }
+
+  _pendingContent = content;
+  _buildVariableModal();
+
+  // 清空並重建欄位
+  _varFieldsEl.innerHTML = '';
+  for (const varName of vars) {
+    const group = document.createElement('div');
+    Object.assign(group.style, { display: 'flex', flexDirection: 'column', gap: '4px' });
+
+    const label = document.createElement('label');
+    label.textContent = varName;
+    Object.assign(label.style, {
+      fontSize: '11px',
+      fontFamily: 'var(--font-label, Manrope, sans-serif)',
+      fontWeight: '600',
+      color: 'var(--primary, #bdc2ff)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+    });
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `輸入「${varName}」的值`;
+    input.dataset.varName = varName;
+    Object.assign(input.style, {
+      background: 'var(--surface-container-lowest, #000)',
+      border: '1px solid var(--outline-variant, #42494f)',
+      borderRadius: '6px',
+      color: 'var(--on-surface, #e0e6ed)',
+      fontFamily: 'var(--font-body, Inter, sans-serif)',
+      fontSize: '13px',
+      padding: '8px 10px',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box',
+    });
+    input.addEventListener('focus', () => {
+      input.style.borderColor = 'var(--primary, #bdc2ff)';
+    });
+    input.addEventListener('blur', () => {
+      input.style.borderColor = 'var(--outline-variant, #42494f)';
+    });
+
+    group.appendChild(label);
+    group.appendChild(input);
+    _varFieldsEl.appendChild(group);
+  }
+
+  // 顯示（設為 flex）
+  _varModalEl.style.display = 'flex';
+
+  // focus 第一個欄位
+  const first = _varFieldsEl.querySelector('input');
+  if (first) requestAnimationFrame(() => first.focus());
+}
+
+function _applyAndCopy() {
+  if (!_varFieldsEl) return;
+  let content = _pendingContent;
+
+  _varFieldsEl.querySelectorAll('input[data-var-name]').forEach((input) => {
+    const name = input.dataset.varName;
+    const val = input.value;
+    const pattern = new RegExp(
+      `\\{\\{\\s*${_escapeRe(name)}\\s*\\}\\}`, 'g'
+    );
+    content = content.replace(pattern, val);
+  });
+
+  _closeModal();
+  copyToClipboard(content);
+}
+
+function _closeModal() {
+  if (_varModalEl) _varModalEl.style.display = 'none';
+  _pendingContent = '';
+}
+
+function _escapeRe(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isVariableModalOpen() {
+  return _varModalEl && _varModalEl.style.display !== 'none';
+}
+
+// ============================================================
 // Navigation
 // ============================================================
 
@@ -805,7 +1036,7 @@ function bindEvents() {
       const id = copyBtn.dataset.copyId;
       const prompt = state.prompts.find((p) => p.id === id);
       if (prompt) {
-        copyToClipboard(prompt.content);
+        copyPromptContent(prompt.content);
       }
       return;
     }
@@ -883,7 +1114,9 @@ function bindEvents() {
   });
   $('#btn-detail-copy').addEventListener('click', () => {
     const prompt = state.prompts.find((p) => p.id === currentDetailId);
-    if (prompt) copyToClipboard(prompt.content);
+    if (prompt) {
+      copyPromptContent(prompt.content);
+    }
   });
 
   // --- Settings ---
@@ -927,6 +1160,8 @@ function bindEvents() {
     });
   });
 
+  // --- Variable Modal 事件已在 _buildVariableModal() 內部建立，此處無需再綁定 ---
+
   // --- Confirm Dialog ---
   $('#btn-confirm-cancel').addEventListener('click', () => {
     dom.confirmDialog.classList.add('hidden');
@@ -944,7 +1179,9 @@ function bindEvents() {
   document.addEventListener('keydown', (e) => {
     // Escape to go back
     if (e.key === 'Escape') {
-      if (!dom.confirmDialog.classList.contains('hidden')) {
+      if (isVariableModalOpen()) {
+        _closeModal();
+      } else if (!dom.confirmDialog.classList.contains('hidden')) {
         dom.confirmDialog.classList.add('hidden');
         confirmCallback = null;
       } else if (!dom.categoryDialog.classList.contains('hidden')) {
