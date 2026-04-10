@@ -28,6 +28,9 @@
           <span class="material-symbols-outlined">add</span>
           新增
         </button>
+        <button id="btn-batch-select" class="btn-icon" title="批量選取">
+          <span class="material-symbols-outlined">checklist</span>
+        </button>
         <button id="btn-settings" class="btn-icon" title="設定">
           <span class="material-symbols-outlined">settings</span>
         </button>
@@ -81,6 +84,23 @@
         </button>
       </div>
     </section>
+
+    <!-- 批量操作列 -->
+    <div id="batch-action-bar" class="batch-action-bar hidden">
+      <span id="batch-count-label" class="batch-count-label">已選 0 個</span>
+      <button id="btn-batch-select-all" class="btn-secondary btn-sm">全選</button>
+      <button id="btn-batch-assign-cat" class="btn-secondary btn-sm">
+        <span class="material-symbols-outlined">folder_open</span>
+        分類
+      </button>
+      <button id="btn-batch-delete" class="btn-danger-sm batch-btn-delete">
+        <span class="material-symbols-outlined">delete</span>
+        刪除
+      </button>
+      <button id="btn-batch-cancel" class="btn-icon batch-btn-cancel" title="取消選取">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
   </div>
 
   <!-- ===== 新增/編輯提示詞面板 ===== -->
@@ -215,6 +235,20 @@
       <div class="dialog-actions">
         <button id="btn-dialog-cancel" class="btn-secondary">取消</button>
         <button id="btn-dialog-confirm" class="btn-primary">建立</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 批量指定分類對話框 ===== -->
+  <div id="batch-cat-dialog" class="dialog-overlay hidden">
+    <div class="dialog-box">
+      <h3 class="dialog-title">移至分類</h3>
+      <div id="batch-cat-options" class="batch-cat-options">
+        <!-- 動態生成的分類選項 -->
+      </div>
+      <div class="dialog-actions">
+        <button id="btn-batch-cat-none" class="btn-secondary">移除分類</button>
+        <button id="btn-batch-cat-cancel" class="btn-secondary">取消</button>
       </div>
     </div>
   </div>

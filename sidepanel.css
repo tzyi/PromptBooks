@@ -1275,3 +1275,139 @@ a:hover {
   font-size: 16px;
   color: var(--primary);
 }
+
+/* ============================================================
+   Batch Selection
+   ============================================================ */
+
+/* Toggle button active state */
+#btn-batch-select.selection-active {
+  color: var(--primary);
+  background: rgba(189, 194, 255, 0.12);
+  border-radius: var(--radius-md);
+}
+
+/* In selection mode: disable hover lift on cards */
+.card-grid.selection-mode .prompt-card {
+  cursor: default;
+}
+.card-grid.selection-mode .prompt-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Selected card highlight */
+.prompt-card.is-selected {
+  background: rgba(189, 194, 255, 0.1) !important;
+  border-color: rgba(189, 194, 255, 0.45) !important;
+  box-shadow: 0 0 0 2px rgba(189, 194, 255, 0.14) !important;
+}
+.prompt-card.is-selected .card-title {
+  color: var(--primary);
+}
+
+/* Check button (replaces send/copy in selection mode) */
+.card-check-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--surface-container-highest);
+  border: 1.5px solid var(--outline-variant);
+  border-radius: 50%;
+  color: var(--on-surface-variant);
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  transition: all var(--transition-fast);
+}
+.card-check-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+.card-check-btn.is-checked {
+  background: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--on-primary-container);
+}
+
+/* Batch action bar */
+.batch-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(66, 73, 79, 0.15);
+  background: var(--surface-container-high);
+  border-radius: var(--radius-xl);
+  margin: 0 12px 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.batch-count-label {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  flex: 1;
+  white-space: nowrap;
+}
+
+/* Cancel button in batch bar */
+.batch-btn-cancel {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Batch delete button icon support */
+.batch-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.batch-btn-delete .material-symbols-outlined {
+  font-size: 15px;
+}
+
+/* Batch category picker options */
+.batch-cat-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 4px 0;
+}
+
+.batch-cat-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-low);
+  border: none;
+  color: var(--on-surface);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+.batch-cat-option:hover {
+  background: var(--surface-container-highest);
+  color: var(--primary);
+}
+.batch-cat-option .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+}
+.batch-cat-option:hover .material-symbols-outlined {
+  color: var(--primary);
+}

@@ -167,6 +167,8 @@ const state = {
   activeCategory: 'all',  // 'all' | category id
   searchQuery: '',
   editingPromptId: null,   // null = new, string = editing
+  selectionMode: false,    // 批量選取模式
+  selectedIds: new Set(),  // 已選取的提示詞 ID
 };
 
 // ============================================================
@@ -221,6 +223,14 @@ const dom = {
   // Confirm
   confirmTitle: $('#confirm-title'),
   confirmMessage: $('#confirm-message'),
+
+  // Batch selection
+  statsBar: $('#stats-bar'),
+  batchBar: $('#batch-action-bar'),
+  batchCountLabel: $('#batch-count-label'),
+  btnBatchSelect: $('#btn-batch-select'),
+  batchCatDialog: $('#batch-cat-dialog'),
+  batchCatOptions: $('#batch-cat-options'),
 };
 
 // ============================================================
@@ -709,11 +719,13 @@ function renderCards() {
   dom.emptyState.classList.toggle('hidden', hasPrompts);
   dom.noResults.classList.toggle('hidden', !hasPrompts || hasResults);
   dom.cardGrid.classList.toggle('hidden', !hasResults);
+  dom.cardGrid.classList.toggle('selection-mode', state.selectionMode);
 
   for (const prompt of filtered) {
     const cat = state.categories.find((c) => c.id === prompt.categoryId);
+    const isSelected = state.selectedIds.has(prompt.id);
     const card = document.createElement('div');
-    card.className = `prompt-card${prompt.pinned ? ' is-pinned' : ''}`;
+    card.className = `prompt-card${prompt.pinned ? ' is-pinned' : ''}${isSelected ? ' is-selected' : ''}`;
     card.dataset.id = prompt.id;
 
     let favHtml = '';
@@ -726,15 +738,21 @@ function renderCards() {
       pinHtml = '<span class="material-symbols-outlined card-pin-badge" title="已置頂">push_pin</span>';
     }
 
+    const actionBtnsHtml = state.selectionMode
+      ? `<button class="card-check-btn${isSelected ? ' is-checked' : ''}" data-check-id="${sanitize(prompt.id)}" title="${isSelected ? '取消選取' : '選取'}">
+           <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' ${isSelected ? '1' : '0'}">check_circle</span>
+         </button>`
+      : `<button class="card-send-btn" data-send-id="${sanitize(prompt.id)}" title="送出至 AI">
+           <span class="material-symbols-outlined">send</span>
+         </button>
+         <button class="card-copy-btn" data-copy-id="${sanitize(prompt.id)}" title="複製提示詞">
+           <span class="material-symbols-outlined">content_copy</span>
+         </button>`;
+
     card.innerHTML = `
       ${favHtml}
       ${pinHtml}
-      <button class="card-send-btn" data-send-id="${sanitize(prompt.id)}" title="送出至 AI">
-        <span class="material-symbols-outlined">send</span>
-      </button>
-      <button class="card-copy-btn" data-copy-id="${sanitize(prompt.id)}" title="複製提示詞">
-        <span class="material-symbols-outlined">content_copy</span>
-      </button>
+      ${actionBtnsHtml}
       <h3 class="card-title">${sanitize(prompt.name)}</h3>
       <p class="card-preview">${sanitize(prompt.content)}</p>
       <div class="card-footer">
@@ -970,6 +988,10 @@ function showContextMenu(x, y, promptId) {
   const isPinned = !!prompt.pinned;
 
   _ctxMenuEl.innerHTML = `
+    <button class="ctx-item" data-action="select">
+      <span class="material-symbols-outlined">checklist</span>
+      <span>批量選取</span>
+    </button>
     <button class="ctx-item" data-action="pin">
       <span class="material-symbols-outlined">${isPinned ? 'keep_off' : 'push_pin'}</span>
       <span>${isPinned ? '取消置頂' : '置頂'}</span>
@@ -981,6 +1003,7 @@ function showContextMenu(x, y, promptId) {
       e.stopPropagation();
       const action = btn.dataset.action;
       if (action === 'pin') togglePin(_ctxTargetId);
+      else if (action === 'select') enterSelectionMode(_ctxTargetId);
       hideContextMenu();
     });
   });
@@ -998,6 +1021,128 @@ function showContextMenu(x, y, promptId) {
 function hideContextMenu() {
   if (_ctxMenuEl) _ctxMenuEl.style.display = 'none';
   _ctxTargetId = null;
+}
+
+// ============================================================
+// Batch Selection
+// ============================================================
+
+let _longPressTimer = null;
+let _longPressCardId = null;
+
+function enterSelectionMode(initialId) {
+  state.selectionMode = true;
+  state.selectedIds.clear();
+  if (initialId) state.selectedIds.add(initialId);
+  dom.btnBatchSelect.classList.add('selection-active');
+  dom.statsBar.classList.add('hidden');
+  dom.batchBar.classList.remove('hidden');
+  updateBatchBar();
+  renderCards();
+}
+
+function exitSelectionMode() {
+  state.selectionMode = false;
+  state.selectedIds.clear();
+  dom.btnBatchSelect.classList.remove('selection-active');
+  dom.batchBar.classList.add('hidden');
+  dom.statsBar.classList.remove('hidden');
+  renderCards();
+}
+
+function toggleCardSelection(id) {
+  if (state.selectedIds.has(id)) {
+    state.selectedIds.delete(id);
+  } else {
+    state.selectedIds.add(id);
+  }
+  // 直接更新卡片 DOM，不需要全部重繪
+  const card = dom.cardGrid.querySelector(`.prompt-card[data-id="${id}"]`);
+  if (card) {
+    const isSelected = state.selectedIds.has(id);
+    card.classList.toggle('is-selected', isSelected);
+    const checkBtn = card.querySelector('.card-check-btn');
+    if (checkBtn) {
+      checkBtn.classList.toggle('is-checked', isSelected);
+      checkBtn.title = isSelected ? '取消選取' : '選取';
+      const icon = checkBtn.querySelector('.material-symbols-outlined');
+      if (icon) icon.style.fontVariationSettings = isSelected ? "'FILL' 1" : "'FILL' 0";
+    }
+  }
+  updateBatchBar();
+}
+
+function toggleSelectAll() {
+  const filtered = getFilteredPrompts();
+  const allSelected = filtered.length > 0 && filtered.every((p) => state.selectedIds.has(p.id));
+  if (allSelected) {
+    filtered.forEach((p) => state.selectedIds.delete(p.id));
+  } else {
+    filtered.forEach((p) => state.selectedIds.add(p.id));
+  }
+  updateBatchBar();
+  renderCards();
+}
+
+function updateBatchBar() {
+  const count = state.selectedIds.size;
+  dom.batchCountLabel.textContent = `已選 ${count} 個`;
+  const filtered = getFilteredPrompts();
+  const allSelected = filtered.length > 0 && filtered.every((p) => state.selectedIds.has(p.id));
+  const btnAll = $('#btn-batch-select-all');
+  if (btnAll) btnAll.textContent = allSelected ? '取消全選' : '全選';
+  const btnDel = $('#btn-batch-delete');
+  const btnCat = $('#btn-batch-assign-cat');
+  if (btnDel) btnDel.disabled = count === 0;
+  if (btnCat) btnCat.disabled = count === 0;
+}
+
+async function batchDelete() {
+  const count = state.selectedIds.size;
+  if (count === 0) return;
+  showConfirm(
+    '批量刪除',
+    `確定要刪除選取的 ${count} 個提示詞嗎？此操作無法復原。`,
+    async () => {
+      state.prompts = state.prompts.filter((p) => !state.selectedIds.has(p.id));
+      await savePrompts(state.prompts);
+      exitSelectionMode();
+      showToast(`已刪除 ${count} 個提示詞`);
+    }
+  );
+}
+
+async function batchAssignCategory(catId) {
+  const count = state.selectedIds.size;
+  const now = Date.now();
+  for (const id of state.selectedIds) {
+    const prompt = state.prompts.find((p) => p.id === id);
+    if (prompt) {
+      prompt.categoryId = catId;
+      prompt.updatedAt = now;
+    }
+  }
+  await savePrompts(state.prompts);
+  dom.batchCatDialog.classList.add('hidden');
+  exitSelectionMode();
+  const cat = state.categories.find((c) => c.id === catId);
+  showToast(cat ? `已將 ${count} 個提示詞移至「${cat.name}」` : `已清除 ${count} 個提示詞的分類`);
+}
+
+function showBatchCatDialog() {
+  const options = dom.batchCatOptions;
+  options.innerHTML = '';
+  for (const cat of state.categories) {
+    const btn = document.createElement('button');
+    btn.className = 'batch-cat-option';
+    btn.innerHTML = `
+      <span class="material-symbols-outlined">${sanitize(cat.icon)}</span>
+      <span>${sanitize(cat.name)}</span>
+    `;
+    btn.addEventListener('click', () => batchAssignCategory(cat.id));
+    options.appendChild(btn);
+  }
+  dom.batchCatDialog.classList.remove('hidden');
 }
 
 // ============================================================
@@ -1350,6 +1495,19 @@ function bindEvents() {
 
   // --- Card Grid (event delegation) ---
   dom.cardGrid.addEventListener('click', (e) => {
+    // \u6279\u91cf\u9078\u53d6\u6a21\u5f0f\uff1a\u9ede\u64ca\u5361\u7247\u5207\u63db\u9078\u53d6\u72c0\u614b
+    if (state.selectionMode) {
+      const card = e.target.closest('.prompt-card');
+      if (!card) return;
+      // \u8df3\u904e\u7dca\u63a5\u5728\u9577\u6309\u5f8c\u89f8\u767c\u7684 click \u4e8b\u4ef6\uff08\u907f\u514d\u91cd\u8907\u5207\u63db\uff09
+      if (card.dataset.id === _longPressCardId) {
+        _longPressCardId = null;
+        return;
+      }
+      toggleCardSelection(card.dataset.id);
+      return;
+    }
+
     // Send button
     const sendBtn = e.target.closest('.card-send-btn');
     if (sendBtn) {
@@ -1381,11 +1539,34 @@ function bindEvents() {
     }
   });
 
+  // --- Card long-press → enter selection mode ---
+  {
+    const _clearLP = () => {
+      if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+    };
+    dom.cardGrid.addEventListener('pointerdown', (e) => {
+      if (state.selectionMode) return;
+      const card = e.target.closest('.prompt-card');
+      if (!card) return;
+      _longPressTimer = setTimeout(() => {
+        _longPressCardId = card.dataset.id;
+        enterSelectionMode(card.dataset.id);
+        _longPressTimer = null;
+      }, 500);
+    }, { passive: true });
+    dom.cardGrid.addEventListener('pointerup', _clearLP, { passive: true });
+    dom.cardGrid.addEventListener('pointercancel', _clearLP, { passive: true });
+    dom.cardGrid.addEventListener('pointermove', (e) => {
+      if (_longPressTimer && (Math.abs(e.movementX) > 4 || Math.abs(e.movementY) > 4)) _clearLP();
+    }, { passive: true });
+  }
+
   // --- Card right-click context menu ---
   dom.cardGrid.addEventListener('contextmenu', (e) => {
     const card = e.target.closest('.prompt-card');
     if (!card) return;
     e.preventDefault();
+    if (state.selectionMode) return; // \u9078\u53d6\u6a21\u5f0f\u4e0b\u4e0d\u986f\u793a\u53f3\u9375\u9078\u55ae
     showContextMenu(e.clientX, e.clientY, card.dataset.id);
   });
 
@@ -1559,6 +1740,29 @@ function bindEvents() {
     });
   });
 
+  // --- Batch Select Toggle ---
+  $('#btn-batch-select').addEventListener('click', () => {
+    if (state.selectionMode) exitSelectionMode();
+    else enterSelectionMode();
+  });
+
+  // --- Batch Action Bar ---
+  $('#btn-batch-select-all').addEventListener('click', () => toggleSelectAll());
+  $('#btn-batch-cancel').addEventListener('click', () => exitSelectionMode());
+  $('#btn-batch-assign-cat').addEventListener('click', () => {
+    if (state.selectedIds.size > 0) showBatchCatDialog();
+  });
+  $('#btn-batch-delete').addEventListener('click', () => batchDelete());
+
+  // --- Batch Category Dialog ---
+  $('#btn-batch-cat-cancel').addEventListener('click', () => {
+    dom.batchCatDialog.classList.add('hidden');
+  });
+  $('#btn-batch-cat-none').addEventListener('click', () => batchAssignCategory(''));
+  dom.batchCatDialog.addEventListener('click', (e) => {
+    if (e.target === dom.batchCatDialog) dom.batchCatDialog.classList.add('hidden');
+  });
+
   // --- Variable Modal 事件已在 _buildVariableModal() 內部建立，此處無需再綁定 ---
 
   // --- Confirm Dialog ---
@@ -1578,7 +1782,11 @@ function bindEvents() {
   document.addEventListener('keydown', (e) => {
     // Escape to go back
     if (e.key === 'Escape') {
-      if (_ctxMenuEl && _ctxMenuEl.style.display !== 'none') {
+      if (state.selectionMode) {
+        exitSelectionMode();
+      } else if (!dom.batchCatDialog.classList.contains('hidden')) {
+        dom.batchCatDialog.classList.add('hidden');
+      } else if (_ctxMenuEl && _ctxMenuEl.style.display !== 'none') {
         hideContextMenu();
       } else if (isVariableModalOpen()) {
         _closeModal();
