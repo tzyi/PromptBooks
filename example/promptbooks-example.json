@@ -1,16 +1,7 @@
 {
   "version": 1,
-  "exportedAt": "2026-04-13T08:31:49.551Z",
+  "exportedAt": "2026-04-13T08:52:23.904Z",
   "prompts": [
-    {
-      "categoryId": "新聞-mnshgpa1",
-      "content": "推送我國際與台灣國內，各15個重要的新聞標題，並附上新聞連結\n若新聞標題是英文，請幫我翻譯成中文",
-      "createdAt": 1775798264474,
-      "favorite": false,
-      "id": "1775798264474-cl0nvaj",
-      "name": "國內外新聞",
-      "updatedAt": 1775799992753
-    },
     {
       "categoryId": "academic",
       "content": "請幫我用高中生聽得懂的程度，解釋 : {{ 名詞或概念 }}",
@@ -40,18 +31,22 @@
       "name": "🔠英 => 中",
       "pinned": true,
       "updatedAt": 1775798881848
+    },
+    {
+      "id": "1776069980111-4bsv7yf",
+      "name": "⛅明天天氣",
+      "content": "明天新莊與板橋天氣如何?",
+      "categoryId": "其他-mnwy7i19",
+      "favorite": false,
+      "createdAt": 1776069980111,
+      "updatedAt": 1776069980111
     }
   ],
   "categories": [
     {
-      "icon": "school",
       "id": "academic",
-      "name": "學術"
-    },
-    {
-      "icon": "🧑‍💻",
-      "id": "生產力-mnshkef8",
-      "name": "生產力"
+      "name": "學術",
+      "icon": "school"
     },
     {
       "icon": "🔤",
@@ -59,14 +54,9 @@
       "name": "語言"
     },
     {
-      "icon": "💰",
-      "id": "財經-mnsh5bfd",
-      "name": "財經"
-    },
-    {
-      "icon": "🗞️",
-      "id": "新聞-mnshgpa1",
-      "name": "新聞"
+      "id": "其他-mnwy7i19",
+      "name": "其他",
+      "icon": "🗃️"
     }
   ]
 }
