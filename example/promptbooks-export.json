@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "exportedAt": "2026-04-13T08:31:49.551Z",
+  "prompts": [
+    {
+      "categoryId": "新聞-mnshgpa1",
+      "content": "推送我國際與台灣國內，各15個重要的新聞標題，並附上新聞連結\n若新聞標題是英文，請幫我翻譯成中文",
+      "createdAt": 1775798264474,
+      "favorite": false,
+      "id": "1775798264474-cl0nvaj",
+      "name": "國內外新聞",
+      "updatedAt": 1775799992753
+    },
+    {
+      "categoryId": "academic",
+      "content": "請幫我用高中生聽得懂的程度，解釋 : {{ 名詞或概念 }}",
+      "createdAt": 1775798285278,
+      "favorite": true,
+      "id": "1775798285278-50ue314",
+      "name": "📖高中生程度解釋",
+      "pinned": true,
+      "updatedAt": 1775799854351
+    },
+    {
+      "categoryId": "academic",
+      "content": "Role\n\n你是一位專業的知識管理專家與內容編輯，擅長將碎片化、口語化的文章，重組為結構嚴謹、邏輯清晰的「深度學習筆記」或「知識文章」；而艱澀難懂較困難的文章或論文，也可以將重點歸納的簡單明瞭。\n\nTask\n\n請根據使用者提供的內容，將其改寫為一篇結構化的知識總結文章。\n\nConstraints & Formatting Rules\n\n結構重組：\n\n標題：請下一個專業且具吸引力的標題（例如：「Dan Koe 的高效表達框架」）。\n\nOverview：文章開頭請用一段話總結全文核心思想與背景。\n\n分段歸納：將內容依邏輯分為不同章節（使用 H2 ## 標題），例如「核心觀念」、「具體方法框架」、「人物介紹/結語」。\n\n層次分明：針對具體的方法或步驟，請使用 H3 ### 標題區隔（例如三個框架）。\n\n語氣轉換：\n\n去除情緒化的語助詞（如「太狠了」、「腦袋炸開」）與社群互動用語（如「追蹤我」、「按讚」）。\n\n將「口語/第二人稱」（你應該...）轉換為「客觀/陳述式」（該方法建議...）。\n\n保持專業、精簡、知識導向的風格。\n\n格式優化：\n\n關鍵字加粗：將核心概念或術語使用 粗體 標示（例如：Micro Story）。\n\n條列式說明：大量使用清單（List）來呈現步驟或要點，讓閱讀更輕鬆。\n\n語言：\n\n請使用繁體中文（Traditional Chinese）。\n\n請總結以下內容： {{ 內容 }}",
+      "createdAt": 1775798729241,
+      "favorite": true,
+      "id": "1775798729241-4r7sgbc",
+      "name": "總結-HB",
+      "pinned": true,
+      "updatedAt": 1775798742063
+    },
+    {
+      "categoryId": "語言-mnsgop6r",
+      "content": "你現在是一個翻譯專家，請幫我翻譯 {{ 英文內容 }}，幫我翻譯成中文\n不需要其他解釋或說明。",
+      "createdAt": 1775798776790,
+      "favorite": false,
+      "id": "1775798776790-mqiy6si",
+      "name": "🔠英 => 中",
+      "pinned": true,
+      "updatedAt": 1775798881848
+    }
+  ],
+  "categories": [
+    {
+      "icon": "school",
+      "id": "academic",
+      "name": "學術"
+    },
+    {
+      "icon": "🧑‍💻",
+      "id": "生產力-mnshkef8",
+      "name": "生產力"
+    },
+    {
+      "icon": "🔤",
+      "id": "語言-mnsgop6r",
+      "name": "語言"
+    },
+    {
+      "icon": "💰",
+      "id": "財經-mnsh5bfd",
+      "name": "財經"
+    },
+    {
+      "icon": "🗞️",
+      "id": "新聞-mnshgpa1",
+      "name": "新聞"
+    }
+  ]
+}

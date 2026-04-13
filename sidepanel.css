@@ -767,36 +767,6 @@ a:hover {
   color: var(--on-surface-variant);
 }
 
-/* --- Stats Bar --- */
-.stats-bar {
-  padding: 12px 16px;
-  border-top: 1px solid rgba(66, 73, 79, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--surface-container);
-  border-radius: var(--radius-xl);
-  margin: 8px 16px 16px;
-}
-
-.stats-label {
-  font-family: var(--font-label);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--on-surface-variant);
-}
-.stats-count {
-  font-size: 12px;
-  color: var(--on-surface);
-  font-weight: 500;
-}
-
-.stats-actions {
-  display: flex;
-  gap: 6px;
-}
-
 /* --- Panels (editor, detail, settings) --- */
 #app-main,
 .editor-panel,

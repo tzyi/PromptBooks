@@ -194,7 +194,6 @@ const dom = {
   cardGrid: $('#card-grid'),
   emptyState: $('#empty-state'),
   noResults: $('#no-results'),
-  promptCount: $('#prompt-count'),
 
   // Editor
   editorTitle: $('#editor-title'),
@@ -225,7 +224,6 @@ const dom = {
   confirmMessage: $('#confirm-message'),
 
   // Batch selection
-  statsBar: $('#stats-bar'),
   batchBar: $('#batch-action-bar'),
   batchCountLabel: $('#batch-count-label'),
   btnBatchSelect: $('#btn-batch-select'),
@@ -767,8 +765,6 @@ function renderCards() {
     grid.appendChild(card);
   }
 
-  // Update count
-  dom.promptCount.textContent = state.prompts.length;
 }
 
 function renderCategorySelect() {
@@ -1035,7 +1031,6 @@ function enterSelectionMode(initialId) {
   state.selectedIds.clear();
   if (initialId) state.selectedIds.add(initialId);
   dom.btnBatchSelect.classList.add('selection-active');
-  dom.statsBar.classList.add('hidden');
   dom.batchBar.classList.remove('hidden');
   updateBatchBar();
   renderCards();
@@ -1046,7 +1041,6 @@ function exitSelectionMode() {
   state.selectedIds.clear();
   dom.btnBatchSelect.classList.remove('selection-active');
   dom.batchBar.classList.add('hidden');
-  dom.statsBar.classList.remove('hidden');
   renderCards();
 }
 
@@ -1582,10 +1576,6 @@ function bindEvents() {
     renderCategoryList();
     showPanel('settings');
   });
-
-  // --- Import / Export (main page) ---
-  $('#btn-import').addEventListener('click', () => dom.fileImport.click());
-  $('#btn-export').addEventListener('click', () => exportData());
 
   // --- File import handler ---
   dom.fileImport.addEventListener('change', (e) => {
